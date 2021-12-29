@@ -1,0 +1,6 @@
+# mac hidden files
+.DS_Store
+
+# Folders
+_obj
+_test
