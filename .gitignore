@@ -4,3 +4,6 @@
 # Folders
 _obj
 _test
+
+# Don't include binary
+lenslocked.com
