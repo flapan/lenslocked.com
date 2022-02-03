@@ -22,15 +22,17 @@ func faq(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "<h1>This is our FAQ</h1>")
 }
 
+func notFound(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusNotFound)
+	fmt.Fprint(w, "<p>We couldn't find the page you were looking for!</p>")
+}
+
 func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", home)
 	r.HandleFunc("/contact", contact)
 	r.HandleFunc("/faq", faq)
-	r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(w, "<p>We couldn't find the page you were looking for!</p>")
-	})
+	r.NotFoundHandler = http.HandlerFunc(notFound)
 	http.ListenAndServe(":3000", r)
 }
