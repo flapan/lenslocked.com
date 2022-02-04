@@ -1,7 +1,7 @@
 <h1>This is, {{.Name}}</h1>
 <p>He has {{len .Dogs}} dogs, they are:</p>
 <ul>
-{{range .Dogs}}
-<li>{{.Name}} is {{.Age}} years old and is a {{.Breed}}</li>
-{{end}}
+    {{range .Dogs}}
+        <li>{{.Name}} is {{.Age}} years old and is a {{.Breed}}</li>
+    {{end}}
 </ul>

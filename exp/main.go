@@ -22,11 +22,12 @@ func main() {
 		panic(err)
 	}
 
-	dogs := []Dog{{
-		Name:  "Fido",
-		Age:   4,
-		Breed: "Mix",
-	},
+	dogs := []Dog{
+		{
+			Name:  "Fido",
+			Age:   4,
+			Breed: "Mix",
+		},
 		{
 			Name:  "Fluf",
 			Age:   7,
