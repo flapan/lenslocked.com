@@ -5,10 +5,15 @@ import (
 	"os"
 )
 
+type Dog struct {
+	Name  string
+	Breed string
+	Age   int
+}
+
 type User struct {
-	Name   string
-	Dog    string
-	DogAge int
+	Name string
+	Dogs []Dog
 }
 
 func main() {
@@ -17,10 +22,20 @@ func main() {
 		panic(err)
 	}
 
+	dogs := []Dog{{
+		Name:  "Fido",
+		Age:   4,
+		Breed: "Mix",
+	},
+		{
+			Name:  "Fluf",
+			Age:   7,
+			Breed: "Husky",
+		}}
+
 	data := User{
-		Name:   "John Smith",
-		Dog:    "Fido",
-		DogAge: 4,
+		Name: "John Smith",
+		Dogs: dogs,
 	}
 
 	err = t.Execute(os.Stdout, data)
