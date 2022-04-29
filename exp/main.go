@@ -22,19 +22,21 @@ func main() {
 		panic(err)
 	}
 	defer db.Close()
-
-	for i := 1; i <= 6; i++ {
-		userID := 2
-		if i > 3 {
-			userID = 3
-		}
-		amount := i * 100
-		description := fmt.Sprintf("USB-C Adapter x%d", i)
-		_, err = db.Exec(`
-		INSERT INTO orders(user_id, amount, description)
-		VALUES($1, $2, $3)`, userID, amount, description)
-		if err != nil {
+	rows, err := db.Query(`
+		SELECT * FROM users INNER JOIN orders
+		ON users.id = orders.user_id`)
+	if err != nil {
+		panic(err)
+	}
+	for rows.Next() {
+		var userID, orderID, amount int
+		var email, name, description string
+		if err := rows.Scan(&userID, &name, &email, &orderID, &userID, &amount, &description); err != nil {
 			panic(err)
 		}
+		fmt.Println("userID:", userID, "name:", name, "email:", email, "orderID:", orderID, "amount:", amount, "description:", description)
+	}
+	if rows.Err() != nil {
+		panic(rows.Err())
 	}
 }
