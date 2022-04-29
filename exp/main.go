@@ -23,16 +23,18 @@ func main() {
 	}
 	defer db.Close()
 
-	var id int
-
-	err = db.QueryRow(`
-	INSERT INTO users(name, email)
-	VALUES($1, $2)
-	RETURNING id`,
-		"Hugo Gadegaard Schiller", "hugogs@gmail.com").Scan(&id)
-
-	if err != nil {
-		panic(err)
+	for i := 1; i <= 6; i++ {
+		userID := 2
+		if i > 3 {
+			userID = 3
+		}
+		amount := i * 100
+		description := fmt.Sprintf("USB-C Adapter x%d", i)
+		_, err = db.Exec(`
+		INSERT INTO orders(user_id, amount, description)
+		VALUES($1, $2, $3)`, userID, amount, description)
+		if err != nil {
+			panic(err)
+		}
 	}
-	fmt.Println("id is...", id)
 }
