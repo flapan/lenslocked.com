@@ -41,12 +41,12 @@ func main() {
 	db.AutoMigrate(&User{}, &Order{})
 
 	var u User
-	if err := db.First(&u).Error; err != nil {
+	if err := db.Preload("Orders").First(&u).Error; err != nil {
 		panic(err)
 	}
-	createOrder(db, u, 1001, "Fake description #1")
-	createOrder(db, u, 9999, "Fake description #2")
-	createOrder(db, u, 100, "Fake description #3")
+	//createOrder(db, u, 1001, "Fake description #1")
+	//createOrder(db, u, 9999, "Fake description #2")
+	//createOrder(db, u, 100, "Fake description #3")
 
 	fmt.Println(u)
 }
