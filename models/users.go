@@ -18,6 +18,7 @@ func NewUserService(connectionInfo string) (*UserService, error) {
 	if err != nil {
 		return nil, err
 	}
+	db.LogMode(true)
 	return &UserService{
 		db: db,
 	}, nil
