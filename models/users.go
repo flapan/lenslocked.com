@@ -45,6 +45,11 @@ func (us *UserService) ByID(id uint) (*User, error) {
 	}
 }
 
+// Creates the provided user and backfill data like ID, created_at etc.
+func (us *UserService) Create(user *User) error {
+	return us.db.Create(user).Error
+}
+
 //Closes the UserService database connection
 func (us *UserService) Close() error {
 	return us.db.Close()
