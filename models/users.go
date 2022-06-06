@@ -15,6 +15,7 @@ var (
 	// ErrInvalidID is returned if an invalid id is supplied
 	ErrInvalidID = errors.New("models: ID must be > 0")
 
+	// ErrInvalidPassword is returned when a provided password is invalid
 	ErrInvalidPassword = errors.New("models: incorrect password provided")
 )
 
