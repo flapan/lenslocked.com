@@ -24,6 +24,17 @@ var (
 const userPwPepper = "sGfwegCagsdl3qwY"
 const hmacSecretKey = "secret-hmac-key"
 
+// User represents the user model stored in DB
+type User struct {
+	gorm.Model
+	Name         string
+	Email        string `gorm:"not null;unique_index"`
+	Password     string `gorm:"-"`
+	PasswordHash string `gorm:"not null"`
+	Remember     string `gorm:"-"`
+	RememberHash string `gotm:"nit null;unique_index"`
+}
+
 // UserDB is used to interact with the users database
 //
 // ByID will look up a user by ID given as input parameter
@@ -49,8 +60,17 @@ type UserDB interface {
 	DestructiveReset() error
 }
 
+// UserService is a set of methods used to manipulate and work with the user model
+type UserService interface {
+	// Authenticate will verify the provided email and password are correct, if they are correct
+	// the user corresponding to those will be returned, otherwise you will receive either
+	// ErrNotFound, ErrInvalidPassword or another error if something goes wrong
+	Authenticate(email, password string) (*User, error)
+	UserDB
+}
+
 // Sets up UserService with database connection
-func NewUserService(connectionInfo string) (*UserService, error) {
+func NewUserService(connectionInfo string) (UserService, error) {
 	ug, err := newUserGorm(connectionInfo)
 	if err != nil {
 		return nil, err
@@ -61,16 +81,41 @@ func NewUserService(connectionInfo string) (*UserService, error) {
 	// }
 	// db.LogMode(true)
 	// hmac := hash.NewHMAC(hmacSecretKey)
-	return &UserService{
+	return &userService{
 		UserDB: &userValidator{
 			UserDB: ug,
 		},
 	}, nil
 }
 
-type UserService struct {
+// This ensures that the type always matches the interface (saves a lot of test lines)
+var _ UserService = &userService{}
+
+type userService struct {
 	UserDB
 }
+
+// Authenticate is used to authenticate a user with the provided email and
+// password.
+func (us *userService) Authenticate(email, password string) (*User, error) {
+	foundUser, err := us.ByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(foundUser.PasswordHash), []byte(password+userPwPepper))
+	if err != nil {
+		switch err {
+		case bcrypt.ErrMismatchedHashAndPassword:
+			return nil, ErrInvalidPassword
+		default:
+			return nil, err
+		}
+	}
+	return foundUser, nil
+}
+
+// This ensures that the type always matches the interface (saves a lot of test lines)
+var _ UserDB = &userValidator{}
 
 type userValidator struct {
 	UserDB
@@ -125,36 +170,6 @@ func (ug *userGorm) ByRemember(token string) (*User, error) {
 		return nil, err
 	}
 	return &user, nil
-}
-
-// Authenticate is used to authenticate a user with the provided email and
-// password.
-func (us *UserService) Authenticate(email, password string) (*User, error) {
-	foundUser, err := us.ByEmail(email)
-	if err != nil {
-		return nil, err
-	}
-	err = bcrypt.CompareHashAndPassword([]byte(foundUser.PasswordHash), []byte(password+userPwPepper))
-	if err != nil {
-		switch err {
-		case bcrypt.ErrMismatchedHashAndPassword:
-			return nil, ErrInvalidPassword
-		default:
-			return nil, err
-		}
-	}
-	return foundUser, nil
-}
-
-// first will query using the provided gorm.db and it will get the first item returned
-// and place it into dst, if nothing is returned is found in the query
-// it will return ErrNotFound
-func first(db *gorm.DB, dst interface{}) error {
-	err := db.First(dst).Error
-	if err == gorm.ErrRecordNotFound {
-		return ErrNotFound
-	}
-	return err
 }
 
 // Creates the provided user and backfill data like ID, created_at etc.
@@ -216,12 +231,13 @@ func (ug *userGorm) AutoMigrate() error {
 	return nil
 }
 
-type User struct {
-	gorm.Model
-	Name         string
-	Email        string `gorm:"not null;unique_index"`
-	Password     string `gorm:"-"`
-	PasswordHash string `gorm:"not null"`
-	Remember     string `gorm:"-"`
-	RememberHash string `gotm:"nit null;unique_index"`
+// first will query using the provided gorm.db and it will get the first item returned
+// and place it into dst, if nothing is returned is found in the query
+// it will return ErrNotFound
+func first(db *gorm.DB, dst interface{}) error {
+	err := db.First(dst).Error
+	if err == gorm.ErrRecordNotFound {
+		return ErrNotFound
+	}
+	return err
 }
