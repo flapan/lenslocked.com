@@ -146,15 +146,7 @@ func (uv *userValidator) ByRemember(token string) (*User, error) {
 // Creates the provided user and backfill data like ID, created_at etc.
 // Naive hashing of password, i.e no checking for length etc
 func (uv *userValidator) Create(user *User) error {
-	if user.Remember == "" {
-		token, err := rand.RememberToken()
-		if err != nil {
-			return err
-		}
-		user.Remember = token
-	}
-
-	err := runUserValFuncs(user, uv.bcryptPassword, uv.hmacRemember)
+	err := runUserValFuncs(user, uv.bcryptPassword, uv.defaultRemember, uv.hmacRemember)
 	if err != nil {
 		return err
 	}
@@ -200,6 +192,18 @@ func (uv userValidator) hmacRemember(user *User) error {
 		return nil
 	}
 	user.RememberHash = uv.hmac.Hash(user.Remember)
+	return nil
+}
+
+func (uv userValidator) defaultRemember(user *User) error {
+	if user.Remember != "" {
+		return nil
+	}
+	token, err := rand.RememberToken()
+	if err != nil {
+		return err
+	}
+	user.Remember = token
 	return nil
 }
 
