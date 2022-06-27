@@ -24,11 +24,13 @@ var (
 	ErrEmailRequired = errors.New("email address is required")
 	// ErrEmailInvalid is returned when a provided email does not match emailRegExp
 	ErrEmailInvalid = errors.New("email address is not valid")
+	// ErrEmailNotAvail is returned when upon user create the provided email is already used by another user in the system
+	ErrEmailNotAvail = errors.New("email is already used by a user")
 )
 
 var (
-	// Naive simplified reg exp for emails
-	emailRegExp = regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,16}$`)
+// Naive simplified reg exp for emails
+//emailRegExp = regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,16}$`)
 )
 
 const userPwPepper = "sGfwegCagsdl3qwY"
@@ -86,11 +88,7 @@ func NewUserService(connectionInfo string) (UserService, error) {
 		return nil, err
 	}
 	hmac := hash.NewHMAC(hmacSecretKey)
-	uv := &userValidator{
-		UserDB: ug,
-		hmac:   hmac,
-	}
-
+	uv := newUserValidator(ug, hmac)
 	return &userService{
 		UserDB: uv,
 	}, nil
@@ -176,7 +174,14 @@ func (uv *userValidator) ByRemember(token string) (*User, error) {
 // Creates the provided user and backfill data like ID, created_at etc.
 // Naive hashing of password, i.e no checking for length etc
 func (uv *userValidator) Create(user *User) error {
-	err := runUserValFuncs(user, uv.bcryptPassword, uv.defaultRemember, uv.hmacRemember, uv.normalizeEmail, uv.requireEmail, uv.emailFormat)
+	err := runUserValFuncs(user,
+		uv.bcryptPassword,
+		uv.defaultRemember,
+		uv.hmacRemember,
+		uv.normalizeEmail,
+		uv.requireEmail,
+		uv.emailFormat,
+		uv.emailIsAvail)
 	if err != nil {
 		return err
 	}
@@ -186,7 +191,13 @@ func (uv *userValidator) Create(user *User) error {
 
 // Updates a user
 func (uv *userValidator) Update(user *User) error {
-	err := runUserValFuncs(user, uv.bcryptPassword, uv.hmacRemember, uv.normalizeEmail, uv.requireEmail, uv.emailFormat)
+	err := runUserValFuncs(user,
+		uv.bcryptPassword,
+		uv.hmacRemember,
+		uv.normalizeEmail,
+		uv.requireEmail,
+		uv.emailFormat,
+		uv.emailIsAvail)
 	if err != nil {
 		return err
 	}
@@ -265,6 +276,20 @@ func (uv userValidator) requireEmail(user *User) error {
 func (uv userValidator) emailFormat(user *User) error {
 	if !uv.emailRegExp.MatchString(user.Email) {
 		return ErrEmailInvalid
+	}
+	return nil
+}
+
+func (uv userValidator) emailIsAvail(user *User) error {
+	existing, err := uv.ByEmail(user.Email)
+	if err == ErrNotFound {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if user.ID == existing.ID {
+		return ErrEmailNotAvail
 	}
 	return nil
 }
