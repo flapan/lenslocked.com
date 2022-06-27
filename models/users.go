@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/flapan/lenslocked.com/hash"
 	"github.com/flapan/lenslocked.com/rand"
@@ -131,6 +132,17 @@ type userValidator struct {
 	hmac hash.HMAC
 }
 
+// ByEmail will normalize the email before calling ByEmail on the UserDB field
+func (uv userValidator) ByEmail(email string) (*User, error) {
+	user := User{
+		Email: email,
+	}
+	if err := runUserValFuncs(&user, uv.normaizeEmail); err != nil {
+		return nil, err
+	}
+	return uv.UserDB.ByEmail(user.Email)
+}
+
 // ByRemember will hash the remember token and then call ByRemember on the subsequent UserDB layer
 func (uv *userValidator) ByRemember(token string) (*User, error) {
 	user := User{
@@ -146,7 +158,7 @@ func (uv *userValidator) ByRemember(token string) (*User, error) {
 // Creates the provided user and backfill data like ID, created_at etc.
 // Naive hashing of password, i.e no checking for length etc
 func (uv *userValidator) Create(user *User) error {
-	err := runUserValFuncs(user, uv.bcryptPassword, uv.defaultRemember, uv.hmacRemember)
+	err := runUserValFuncs(user, uv.bcryptPassword, uv.defaultRemember, uv.hmacRemember, uv.normaizeEmail)
 	if err != nil {
 		return err
 	}
@@ -156,7 +168,7 @@ func (uv *userValidator) Create(user *User) error {
 
 // Updates a user
 func (uv *userValidator) Update(user *User) error {
-	err := runUserValFuncs(user, uv.bcryptPassword, uv.hmacRemember)
+	err := runUserValFuncs(user, uv.bcryptPassword, uv.hmacRemember, uv.normaizeEmail)
 	if err != nil {
 		return err
 	}
@@ -217,7 +229,12 @@ func (uv userValidator) idGreaterThan(n uint) userValFunc {
 		}
 		return nil
 	})
+}
 
+func (uv userValidator) normaizeEmail(user *User) error {
+	user.Email = strings.ToLower(user.Email)
+	user.Email = strings.TrimSpace(user.Email)
+	return nil
 }
 
 // This ensures that the type always matches the interface (saves a lot of test lines)
