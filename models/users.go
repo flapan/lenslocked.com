@@ -158,7 +158,7 @@ func (uv *userValidator) ByRemember(token string) (*User, error) {
 // Creates the provided user and backfill data like ID, created_at etc.
 // Naive hashing of password, i.e no checking for length etc
 func (uv *userValidator) Create(user *User) error {
-	err := runUserValFuncs(user, uv.bcryptPassword, uv.defaultRemember, uv.hmacRemember, uv.normaizeEmail)
+	err := runUserValFuncs(user, uv.bcryptPassword, uv.defaultRemember, uv.hmacRemember, uv.normaizeEmail, uv.requireEmail)
 	if err != nil {
 		return err
 	}
@@ -168,7 +168,7 @@ func (uv *userValidator) Create(user *User) error {
 
 // Updates a user
 func (uv *userValidator) Update(user *User) error {
-	err := runUserValFuncs(user, uv.bcryptPassword, uv.hmacRemember, uv.normaizeEmail)
+	err := runUserValFuncs(user, uv.bcryptPassword, uv.hmacRemember, uv.normaizeEmail, uv.requireEmail)
 	if err != nil {
 		return err
 	}
@@ -234,6 +234,13 @@ func (uv userValidator) idGreaterThan(n uint) userValFunc {
 func (uv userValidator) normaizeEmail(user *User) error {
 	user.Email = strings.ToLower(user.Email)
 	user.Email = strings.TrimSpace(user.Email)
+	return nil
+}
+
+func (uv userValidator) requireEmail(user *User) error {
+	if user.Email == "" {
+		return errors.New("Email address is required")
+	}
 	return nil
 }
 
