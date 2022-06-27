@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"regexp"
 	"strings"
 
 	"github.com/flapan/lenslocked.com/hash"
@@ -14,12 +15,20 @@ import (
 var (
 	// ErrNotFound is returned when a resource cannot be found in the database
 	ErrNotFound = errors.New("models: resource not found")
-
 	// ErrInvalidID is returned if an invalid id is supplied
 	ErrInvalidID = errors.New("models: ID must be > 0")
-
 	// ErrInvalidPassword is returned when a provided password is invalid
 	ErrInvalidPassword = errors.New("models: incorrect password provided")
+
+	// ErrEmailRequired is returned when an email is not provided when creating a new user
+	ErrEmailRequired = errors.New("email address is required")
+	// ErrEmailInvalid is returned when a provided email does not match emailRegExp
+	ErrEmailInvalid = errors.New("email address is not valid")
+)
+
+var (
+	// Naive simplified reg exp for emails
+	emailRegExp = regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,16}$`)
 )
 
 const userPwPepper = "sGfwegCagsdl3qwY"
@@ -127,9 +136,18 @@ func runUserValFuncs(user *User, fns ...userValFunc) error {
 // This ensures that the type always matches the interface (saves a lot of test lines)
 var _ UserDB = &userValidator{}
 
+func newUserValidator(udb UserDB, hmac hash.HMAC) *userValidator {
+	return &userValidator{
+		UserDB:      udb,
+		hmac:        hmac,
+		emailRegExp: regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,16}$`),
+	}
+}
+
 type userValidator struct {
 	UserDB
-	hmac hash.HMAC
+	hmac        hash.HMAC
+	emailRegExp *regexp.Regexp
 }
 
 // ByEmail will normalize the email before calling ByEmail on the UserDB field
@@ -137,7 +155,7 @@ func (uv userValidator) ByEmail(email string) (*User, error) {
 	user := User{
 		Email: email,
 	}
-	if err := runUserValFuncs(&user, uv.normaizeEmail); err != nil {
+	if err := runUserValFuncs(&user, uv.normalizeEmail); err != nil {
 		return nil, err
 	}
 	return uv.UserDB.ByEmail(user.Email)
@@ -158,7 +176,7 @@ func (uv *userValidator) ByRemember(token string) (*User, error) {
 // Creates the provided user and backfill data like ID, created_at etc.
 // Naive hashing of password, i.e no checking for length etc
 func (uv *userValidator) Create(user *User) error {
-	err := runUserValFuncs(user, uv.bcryptPassword, uv.defaultRemember, uv.hmacRemember, uv.normaizeEmail, uv.requireEmail)
+	err := runUserValFuncs(user, uv.bcryptPassword, uv.defaultRemember, uv.hmacRemember, uv.normalizeEmail, uv.requireEmail, uv.emailFormat)
 	if err != nil {
 		return err
 	}
@@ -168,7 +186,7 @@ func (uv *userValidator) Create(user *User) error {
 
 // Updates a user
 func (uv *userValidator) Update(user *User) error {
-	err := runUserValFuncs(user, uv.bcryptPassword, uv.hmacRemember, uv.normaizeEmail, uv.requireEmail)
+	err := runUserValFuncs(user, uv.bcryptPassword, uv.hmacRemember, uv.normalizeEmail, uv.requireEmail, uv.emailFormat)
 	if err != nil {
 		return err
 	}
@@ -231,7 +249,7 @@ func (uv userValidator) idGreaterThan(n uint) userValFunc {
 	})
 }
 
-func (uv userValidator) normaizeEmail(user *User) error {
+func (uv userValidator) normalizeEmail(user *User) error {
 	user.Email = strings.ToLower(user.Email)
 	user.Email = strings.TrimSpace(user.Email)
 	return nil
@@ -239,7 +257,14 @@ func (uv userValidator) normaizeEmail(user *User) error {
 
 func (uv userValidator) requireEmail(user *User) error {
 	if user.Email == "" {
-		return errors.New("Email address is required")
+		return ErrEmailRequired
+	}
+	return nil
+}
+
+func (uv userValidator) emailFormat(user *User) error {
+	if !uv.emailRegExp.MatchString(user.Email) {
+		return ErrEmailInvalid
 	}
 	return nil
 }
