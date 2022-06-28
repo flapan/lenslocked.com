@@ -30,6 +30,9 @@ var (
 	ErrEmailInvalid = errors.New("email address is not valid")
 	// ErrEmailNotAvail is returned when upon user create the provided email is already used by another user in the system
 	ErrEmailNotAvail = errors.New("email is already used by a user")
+
+	//ErrRememberHashRequired
+	ErrRememberHashRequired = errors.New("models: remember token is required")
 )
 
 var (
@@ -185,6 +188,7 @@ func (uv *userValidator) Create(user *User) error {
 		uv.passwordHashRequired,
 		uv.defaultRemember,
 		uv.hmacRemember,
+		uv.rememberHashRequired,
 		uv.normalizeEmail,
 		uv.requireEmail,
 		uv.emailFormat,
@@ -204,6 +208,7 @@ func (uv *userValidator) Update(user *User) error {
 		uv.passwordRequired,
 		uv.passwordHashRequired,
 		uv.hmacRemember,
+		uv.rememberHashRequired,
 		uv.normalizeEmail,
 		uv.requireEmail,
 		uv.emailFormat,
@@ -282,6 +287,13 @@ func (uv userValidator) defaultRemember(user *User) error {
 		return err
 	}
 	user.Remember = token
+	return nil
+}
+
+func (uv userValidator) rememberHashRequired(user *User) error {
+	if user.RememberHash == "" {
+		return ErrRememberHashRequired
+	}
 	return nil
 }
 
