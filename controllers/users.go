@@ -29,21 +29,19 @@ type Users struct {
 //
 // GET /signup
 func (u *Users) New(w http.ResponseWriter, r *http.Request) {
-	type Alert struct {
-		Level   string
-		Message string
-	}
-	a := Alert{
-		Level:   "warning",
-		Message: "successfully fully renderend a dynamic alert!",
-	}
-	type Data struct {
-		Alert Alert
-		Yield interface{}
-	}
-	d := Data{
-		Alert: a,
-		Yield: "Hello",
+	// a := Alert{
+	// 	Level:   "warning",
+	// 	Message: "successfully fully renderend a dynamic alert!",
+	// }
+	// d := Data{
+	// 	Alert: a,
+	// 	Yield: "Hello",
+	// }
+	d := views.Data{
+		Alert: &views.Alert{
+			Level:   views.AlertLvlError,
+			Message: "Something went wrong",
+		},
 	}
 	if err := u.NewView.Render(w, d); err != nil {
 		panic(err)
