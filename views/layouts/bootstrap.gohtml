@@ -9,7 +9,7 @@
     <body>
         {{template "navbar"}}
         <div class="container-fluid">
-            {{template "alert"}}
+            {{template "alert" .}}
             {{template "yield" .}}
             
             {{template "footer"}}
