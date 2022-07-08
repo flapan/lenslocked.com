@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"regexp"
 	"strings"
 
@@ -10,29 +9,6 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"golang.org/x/crypto/bcrypt"
-)
-
-var (
-	// ErrNotFound is returned when a resource cannot be found in the database
-	ErrNotFound = errors.New("models: resource not found")
-	// ErrIDInvalid is returned if an invalid id is supplied
-	ErrIDInvalid = errors.New("models: ID must be > 0")
-	// ErrPasswordIncorrect is returned when a provided password is invalid
-	ErrPasswordIncorrect = errors.New("models: incorrect password provided")
-	// ErrPasswordTooShort is returned when an update or create is attempted with a password that is less than 8 characters
-	ErrPasswordTooShort = errors.New("models: password must be at least 8 characters long")
-	// ErrPasswordRequired is retunred when an update or create is attempted with the empty password
-	ErrPasswordRequired = errors.New("models: password is required")
-
-	// ErrEmailRequired is returned when an email is not provided when creating a new user
-	ErrEmailRequired = errors.New("email address is required")
-	// ErrEmailInvalid is returned when a provided email does not match emailRegExp
-	ErrEmailInvalid = errors.New("email address is not valid")
-	// ErrEmailNotAvail is returned when upon user create the provided email is already used by another user in the system
-	ErrEmailNotAvail = errors.New("email is already used by a user")
-
-	//ErrRememberHashRequired
-	ErrRememberHashRequired = errors.New("models: remember token is required")
 )
 
 var (

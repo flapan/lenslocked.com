@@ -30,20 +30,6 @@ type Users struct {
 //
 // GET /signup
 func (u *Users) New(w http.ResponseWriter, r *http.Request) {
-	// a := Alert{
-	// 	Level:   "warning",
-	// 	Message: "successfully fully renderend a dynamic alert!",
-	// }
-	// d := Data{
-	// 	Alert: a,
-	// 	Yield: "Hello",
-	// }
-	// d := views.Data{
-	// 	Alert: &views.Alert{
-	// 		Level:   views.AlertLvlError,
-	// 		Message: "Something went wrong",
-	// 	},
-	// }
 	if err := u.NewView.Render(w, nil); err != nil {
 		panic(err)
 	}
@@ -65,10 +51,7 @@ func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
 
 	if err := parseForm(r, &form); err != nil {
 		log.Println(err)
-		vd.Alert = &views.Alert{
-			Level:   views.AlertLvlError,
-			Message: views.AlerMsgGeneric,
-		}
+		vd.SetAlert(err)
 		u.NewView.Render(w, vd)
 		return
 	}
@@ -78,10 +61,7 @@ func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
 		Password: form.Password,
 	}
 	if err := u.us.Create(&user); err != nil {
-		vd.Alert = &views.Alert{
-			Level:   views.AlertLvlError,
-			Message: err.Error(),
-		}
+		vd.SetAlert(err)
 		u.NewView.Render(w, vd)
 		return
 	}
