@@ -181,7 +181,6 @@ func (uv *userValidator) Update(user *User) error {
 	err := runUserValFuncs(user,
 		uv.passwordMinLength,
 		uv.bcryptPassword,
-		uv.passwordRequired,
 		uv.passwordHashRequired,
 		uv.hmacRemember,
 		uv.rememberHashRequired,
@@ -310,7 +309,7 @@ func (uv userValidator) emailIsAvail(user *User) error {
 	if err != nil {
 		return err
 	}
-	if user.ID == existing.ID {
+	if user.ID != existing.ID {
 		return ErrEmailNotAvail
 	}
 	return nil
