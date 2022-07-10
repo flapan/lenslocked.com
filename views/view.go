@@ -38,6 +38,7 @@ func (v *View) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	v.Render(w, nil)
 }
 
+// Render is responsible for rendering the view
 func (v *View) Render(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "text/html")
 	switch data.(type) {
@@ -66,11 +67,11 @@ func layoutFiles() []string {
 	return files
 }
 
-// addTemplatePath takes in a lsice of strings representing filepaths
+// addTemplatePath takes in a slice of strings representing filepaths
 // for templates and prepends the TemplateDir directory to each string
 // in the slice
 //
-// Eg the input {"home"} would result in the output {"views/home"} if
+// E.g. the input {"home"} would result in the output {"views/home"} if
 // TemplateDir = "views/"
 func addTemplatePath(files []string) {
 	for i, f := range files {
@@ -78,6 +79,12 @@ func addTemplatePath(files []string) {
 	}
 }
 
+// addTempalteExt takes in a slice of strings representing filepaths
+// for templates and appends the TemplateExt extension to each string
+// in the slice
+//
+// E.g. the input {"home"} would result in the output {”home.gohtml”} if
+// TemplateExt = ".gohtml"
 func addTempalteExt(files []string) {
 	for i, f := range files {
 		files[i] = f + TemplateExt
