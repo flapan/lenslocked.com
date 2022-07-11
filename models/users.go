@@ -65,16 +65,13 @@ type UserService interface {
 }
 
 // Sets up UserService with database connection
-func NewUserService(connectionInfo string) (UserService, error) {
-	ug, err := newUserGorm(connectionInfo)
-	if err != nil {
-		return nil, err
-	}
+func NewUserService(db *gorm.DB) UserService {
+	ug := &userGorm{db}
 	hmac := hash.NewHMAC(hmacSecretKey)
 	uv := newUserValidator(ug, hmac)
 	return &userService{
 		UserDB: uv,
-	}, nil
+	}
 }
 
 // This ensures that the type always matches the interface (saves a lot of test lines)
@@ -317,17 +314,6 @@ func (uv userValidator) emailIsAvail(user *User) error {
 
 // This ensures that the type always matches the interface (saves a lot of test lines)
 var _ UserDB = &userGorm{}
-
-func newUserGorm(connectionInfo string) (*userGorm, error) {
-	db, err := gorm.Open("postgres", connectionInfo)
-	if err != nil {
-		return nil, err
-	}
-	db.LogMode(true)
-	return &userGorm{
-		db: db,
-	}, nil
-}
 
 type userGorm struct {
 	db *gorm.DB
