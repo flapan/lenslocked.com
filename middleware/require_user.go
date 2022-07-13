@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/flapan/lenslocked.com/context"
 	"github.com/flapan/lenslocked.com/models"
 )
 
@@ -27,6 +28,9 @@ func (mw *RequireUser) ApplyFn(next http.HandlerFunc) http.HandlerFunc {
 			http.Redirect(w, r, "login", http.StatusFound)
 			return
 		}
+		ctx := r.Context()
+		ctx = context.WithUser(ctx, user)
+		r = r.WithContext(ctx)
 		fmt.Println("User found: ", user)
 		next(w, r)
 	})
