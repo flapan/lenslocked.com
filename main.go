@@ -27,14 +27,13 @@ func main() {
 	services.AutoMigrate()
 	//services.DestructiveReset()
 
+	r := mux.NewRouter()
 	staticC := controllers.NewStatic()
 	usersC := controllers.NewUsers(services.User)
-	galleriesC := controllers.NewGalleries(services.Gallery)
+	galleriesC := controllers.NewGalleries(services.Gallery, r)
 	requiresUserMw := middleware.RequireUser{
 		UserService: services.User,
 	}
-
-	r := mux.NewRouter()
 
 	// Static routes
 	r.Handle("/", staticC.Home).Methods("GET")
@@ -50,7 +49,9 @@ func main() {
 	// Gallery Routes
 	r.Handle("/galleries/new", requiresUserMw.Apply(galleriesC.New)).Methods("GET")
 	r.HandleFunc("/galleries", requiresUserMw.ApplyFn(galleriesC.Create)).Methods("POST")
+	r.HandleFunc("/galleries/{id:[0-9]+}", galleriesC.Show).Methods("GET").Name(controllers.ShowGallery)
 
+	fmt.Println("Starting server and listening on :3000...")
 	http.ListenAndServe(":3000", r)
 }
 
